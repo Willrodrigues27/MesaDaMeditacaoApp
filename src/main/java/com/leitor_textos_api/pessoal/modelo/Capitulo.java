@@ -1,4 +1,4 @@
-package modelo;
+package com.leitor_textos_api.pessoal.modelo;
 
 import jakarta.persistence.*;
 import lombok.Data;
