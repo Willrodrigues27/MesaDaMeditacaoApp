@@ -1,17 +1,37 @@
 package com.leitor_textos_api.pessoal.controller;
 
 import com.leitor_textos_api.pessoal.modelo.Capitulo;
+import com.leitor_textos_api.pessoal.repository.CapituloRepository;
+import com.leitor_textos_api.pessoal.repository.LivroRepository;
 import com.leitor_textos_api.pessoal.service.CapituloService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.leitor_textos_api.pessoal.repository.CapituloRepository;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/capitulos")
-public class CapituloControler {
+public class CapituloController {
+
+    @Autowired
+    private CapituloRepository capituloRepository;
+
+    @Autowired
+    private LivroRepository livroRepository;
+
+    @PostMapping("/livro/{livroId}")
+    public ResponseEntity<Capitulo> adicionarCapitulo(@PathVariable Long livroId, @RequestBody Capitulo capitulo) {
+        return livroRepository.findById(livroId).map(livro -> {
+            capitulo.setLivro(livro);
+            return ResponseEntity.ok(capituloRepository.save(capitulo));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/livro/{livroId}")
+    public List<Capitulo> listarPorLivro(@PathVariable Long livroId) {
+        return capituloRepository.findByLivroId(livroId);
+    }
 
     @Autowired
     private CapituloService service;

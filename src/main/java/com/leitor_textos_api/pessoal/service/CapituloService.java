@@ -26,7 +26,7 @@ public class CapituloService {
 
     //Criar Regras (Não salvar capítulos sem título)
     public Capitulo salvar(Capitulo capitulo){
-        if (capitulo.getTitulo() == null || capitulo.getTitulo().isEmpty()){
+        if (capitulo.getTituloCapitulo() == null || capitulo.getTituloCapitulo().isEmpty()){
             throw new RuntimeException("O capítulo precisa de um título!");
         }
         return repository.save(capitulo);
@@ -35,7 +35,7 @@ public class CapituloService {
     //Atualizar capítulos
     public Capitulo atualizar(Long id, Capitulo capituloAtualizado){
         return repository.findById(id).map(capitulo -> {
-            capitulo.setTitulo(capituloAtualizado.getTitulo());
+            capitulo.setTituloCapitulo(capituloAtualizado.getTituloCapitulo());
             capitulo.setConteudo(capituloAtualizado.getConteudo());
             return repository.save(capitulo);
         }).orElseThrow(() -> new RuntimeException("Capítulo não encontrado!"));
