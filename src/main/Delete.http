@@ -1,0 +1,14 @@
+### Deletar o capítulo 1
+DELETE http://localhost:8081/api/capitulos/1
+
+### Ver a lista atualizada para confirmar que sumiu
+GET http://localhost:8081/api/capitulos
+
+### Editar o capítulo 2
+PUT http://localhost:8081/api/capitulos/2
+Content-Type: application/json
+
+{
+  "titulo": "Os Três Porquinhos Atualizado",
+  "conteudo": "Era uma vez Três porquinhos irmãos (João, Miguel e Mario) saem da casa da mãe para construir suas próprias vidas. Dois, preguiçosos (Mario e Miguel), fazem casas de palha e madeira. O terceiro(João), trabalhador, constrói uma sólida casa de tijolos. O lobo mau (Mateus) derruba as duas primeiras casas soprando, mas não consegue destruir a de tijolos, e os porquinhos se salvam"
+}

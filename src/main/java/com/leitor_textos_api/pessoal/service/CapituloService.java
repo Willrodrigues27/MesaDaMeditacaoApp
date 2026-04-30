@@ -31,4 +31,18 @@ public class CapituloService {
         }
         return repository.save(capitulo);
     }
+
+    //Atualizar capítulos
+    public Capitulo atualizar(Long id, Capitulo capituloAtualizado){
+        return repository.findById(id).map(capitulo -> {
+            capitulo.setTitulo(capituloAtualizado.getTitulo());
+            capitulo.setConteudo(capituloAtualizado.getConteudo());
+            return repository.save(capitulo);
+        }).orElseThrow(() -> new RuntimeException("Capítulo não encontrado!"));
+    }
+
+    //Deletar um capítulo
+    public void deletar(Long id){
+        repository.deleteById(id);
+    }
 }

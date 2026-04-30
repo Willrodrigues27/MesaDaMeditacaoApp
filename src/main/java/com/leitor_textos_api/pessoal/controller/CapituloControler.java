@@ -35,4 +35,21 @@ public class CapituloControler {
     public Capitulo salvar(@RequestBody Capitulo capitulo) {
         return service.salvar(capitulo);
     }
+
+    // Metodo para editar
+    @PutMapping("/{id}")
+    public ResponseEntity<Capitulo> atualizar(@PathVariable Long id, @RequestBody Capitulo capitulo){
+        try {
+            return ResponseEntity.ok(service.atualizar(id, capitulo));
+        } catch (RuntimeException e){
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    //Metodo DELETE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id){
+        service.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }
