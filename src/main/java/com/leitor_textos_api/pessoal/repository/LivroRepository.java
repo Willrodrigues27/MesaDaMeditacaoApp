@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface LivroRepository extends JpaRepository<Livro, Long> {
+    List<Livro> findByGeneroIgnoreCase(String genero);
     List<Livro> findByTituloContainingIgnoreCase(String titulo);
 
     Long id(Long id);
