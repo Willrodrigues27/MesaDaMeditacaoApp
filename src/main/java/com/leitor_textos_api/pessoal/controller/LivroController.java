@@ -22,12 +22,6 @@ public class LivroController {
         return service.listarTodos();
     }
 
-    @GetMapping("/secao/{nomeGenero}")
-    public ResponseEntity<List<Livro>> buscarPorSecao(@PathVariable String nomeGenero) {
-        List<Livro> livros = service.listarPorGenero(nomeGenero);
-        return ResponseEntity.ok(livros);
-    }
-
     @PostMapping
     public Livro criarLivro(@RequestBody Livro livro){
         return service.salvar(livro);
@@ -48,8 +42,9 @@ public class LivroController {
         return service.listarCapitulos(id);
     }
 
-    @GetMapping("/teste")
-    public String teste(){
-        return "Servidor está ouvindo!";
+    @GetMapping("/filtro")
+    public ResponseEntity<List<Livro>> buscarPorSecao(@RequestParam String genero) {
+        List<Livro> livros = service.listarPorGenero(genero);
+        return ResponseEntity.ok(livros);
     }
 }
