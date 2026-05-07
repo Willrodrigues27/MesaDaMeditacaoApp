@@ -17,6 +17,9 @@ public interface LivroRepository extends JpaRepository<Livro, Long> {
     @Query("SELECT l FROM Livro l WHERE LOWER(l.genero) = LOWER(:genero)")
     List<Livro> buscarPorGeneroCustom(@Param("genero") String genero);
 
+    @Query("SELECT l FROM Livro l WHERE l.secaoId = :secaoId")
+    List<Livro> findBySecaoId(@Param("secaoId") Long secaoId);
+
     Long id(Long id);
 }
 

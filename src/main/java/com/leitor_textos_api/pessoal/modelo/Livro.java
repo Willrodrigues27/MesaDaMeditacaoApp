@@ -43,4 +43,9 @@ public class Livro {
         capitulos.add(capitulo);
         capitulo.setLivro(this);
     }
+
+    private Long secaoId;
+
+    public Long getSecaoId() { return secaoId; }
+    public void setSecaoId(Long secaoId) { this.secaoId = secaoId; }
 }

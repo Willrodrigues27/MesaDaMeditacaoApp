@@ -10,6 +10,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/livros")
+@CrossOrigin(origins = "*")
+
 public class LivroController {
     private final LivroService service;
 
@@ -45,6 +47,12 @@ public class LivroController {
     @GetMapping("/filtro")
     public ResponseEntity<List<Livro>> buscarPorSecao(@RequestParam String genero) {
         List<Livro> livros = service.listarPorGenero(genero);
+        return ResponseEntity.ok(livros);
+    }
+
+    @GetMapping("/secao/{id}")
+    public ResponseEntity<List<Livro>> buscarLivrosPorIdDaSecao(@PathVariable Long id) {
+        List<Livro> livros = service.listarPorSecao(id);
         return ResponseEntity.ok(livros);
     }
 }

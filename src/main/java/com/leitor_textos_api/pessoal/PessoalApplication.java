@@ -28,7 +28,7 @@ public class PessoalApplication {
 			repository.save(c1);
 			repository.save(c2);
 
-			System.out.println("Dados de teste carregados com sucesso!");
+			System.out.println("Dados carregados com sucesso!");
 		};
 	}
 }
