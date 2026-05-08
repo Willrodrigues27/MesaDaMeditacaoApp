@@ -3,10 +3,7 @@ package com.leitor_textos_api.pessoal.service;
 import com.leitor_textos_api.pessoal.modelo.Capitulo;
 import com.leitor_textos_api.pessoal.modelo.Livro;
 import com.leitor_textos_api.pessoal.repository.LivroRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -23,7 +20,7 @@ public class LivroService {
     }
 
     public List<Livro> listarTodos(){
-        return repository.findAll();
+        return repository.findAllByOrderByTituloAsc();
     }
 
     public Livro salvar(Livro livro) {
@@ -46,7 +43,8 @@ public class LivroService {
                 .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
         return livro.getCapitulos();
     }
+
     public List<Livro> listarPorSecao(Long secaoId) {
-        return repository.findBySecaoId(secaoId);
+        return repository.findBySecaoIdOrderByTituloAsc(secaoId);
     }
 }

@@ -10,16 +10,17 @@ import java.util.List;
 
 @Repository
 public interface LivroRepository extends JpaRepository<Livro, Long> {
+
     List<Livro> findByGeneroIgnoreCase(String genero);
 
+    List<Livro> findByTituloContainingIgnoreCaseOrderByTituloAsc(String titulo);
+
+    List<Livro> findBySecaoIdOrderByTituloAsc(Long secaoId);
+
+    List<Livro> findAllByOrderByTituloAsc();
+
+    @Query("SELECT l FROM Livro l WHERE l.secaoId = :secaoId ORDER BY l.titulo ASC")
+    List<Livro> buscarPorSecaoOrdenado(@Param("secaoId") Long secaoId);
+
     List<Livro> findByTituloContainingIgnoreCase(String titulo);
-
-    @Query("SELECT l FROM Livro l WHERE LOWER(l.genero) = LOWER(:genero)")
-    List<Livro> buscarPorGeneroCustom(@Param("genero") String genero);
-
-    @Query("SELECT l FROM Livro l WHERE l.secaoId = :secaoId")
-    List<Livro> findBySecaoId(@Param("secaoId") Long secaoId);
-
-    Long id(Long id);
 }
-
