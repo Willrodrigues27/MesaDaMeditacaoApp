@@ -23,29 +23,59 @@ public class Livro {
     private String genero;
     private String descricao;
 
-    public Long getId() {return id;}
-    public String getTitulo() {return titulo;}
-    public String getGenero() {return genero;}
-    public String getDescricao(){return descricao;}
+    public Long getId() {
+        return id;
+    }
 
-    public void setId(Long id) {this.id = id;}
-    public void setTitulo(String titulo) {this.titulo = titulo;}
-    public void setGenero(String genero) {this.genero = genero;}
-    public void setDescricao(String descricao) {this.descricao = descricao;}
+    public String getTitulo() {
+        return titulo;
+    }
 
-    public Livro() {}
+    public String getGenero() {
+        return genero;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public Livro() {
+    }
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "livro", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "livro", cascade = CascadeType.ALL)
+    @OrderBy("id ASC")
     private List<Capitulo> capitulos = new ArrayList<>();
 
-    public void adionarCapitulo (Capitulo capitulo){
+    public void adionarCapitulo(Capitulo capitulo) {
         capitulos.add(capitulo);
         capitulo.setLivro(this);
     }
 
+    @JsonProperty("secao_id")
     private Long secaoId;
 
-    public Long getSecaoId() { return secaoId; }
-    public void setSecaoId(Long secaoId) { this.secaoId = secaoId; }
+    public Long getSecaoId() {
+        return secaoId;
+    }
+
+    public void setSecaoId(Long secaoId) {
+        this.secaoId = secaoId;
+    }
 }
