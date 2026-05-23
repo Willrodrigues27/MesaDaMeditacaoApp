@@ -2,10 +2,12 @@ package com.leitor_textos_api.pessoal.controller;
 
 import com.leitor_textos_api.pessoal.modelo.Capitulo;
 import com.leitor_textos_api.pessoal.modelo.Livro;
+import com.leitor_textos_api.pessoal.repository.LivroRepository;
 import com.leitor_textos_api.pessoal.service.LivroService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
@@ -54,5 +56,13 @@ public class LivroController {
     public ResponseEntity<List<Livro>> buscarLivrosPorIdDaSecao(@PathVariable Long id) {
         List<Livro> livros = service.listarPorSecao(id);
         return ResponseEntity.ok(livros);
+    }
+    @Autowired
+    public LivroRepository livroRepository;
+
+    @GetMapping("/pesquisa")
+    public ResponseEntity<List<Livro>> pesquisarLivros(@RequestParam("termo") String termo) {
+        List<Livro> resultados = livroRepository.findByTituloContainingIgnoreCaseOrCapitulosConteudoContainingIgnoreCase(termo, termo);
+        return ResponseEntity.ok(resultados);
     }
 }
