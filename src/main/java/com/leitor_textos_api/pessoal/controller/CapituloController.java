@@ -20,6 +20,18 @@ public class CapituloController {
     @Autowired
     private LivroRepository livroRepository;
 
+    @Autowired
+    private CapituloService service;
+
+    @GetMapping("/pesquisa")
+    public ResponseEntity<List<Capitulo>> pesquisarConteudo(@RequestParam("termo") String termo) {
+
+        List<Capitulo> paginasEncontradas = capituloRepository
+                .findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCase(termo, termo);
+
+        return ResponseEntity.ok(paginasEncontradas);
+    }
+
     @PostMapping("/livro/{livroId}")
     public ResponseEntity<Capitulo> adicionarCapitulo(@PathVariable Long livroId, @RequestBody Capitulo capitulo) {
         return livroRepository.findById(livroId).map(livro -> {
@@ -32,9 +44,6 @@ public class CapituloController {
     public List<Capitulo> listarPorLivro(@PathVariable Long livroId) {
         return capituloRepository.findByLivroId(livroId);
     }
-
-    @Autowired
-    private CapituloService service;
 
     // Retorna ao menu
     @GetMapping
