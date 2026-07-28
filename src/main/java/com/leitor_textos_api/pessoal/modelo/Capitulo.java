@@ -7,11 +7,16 @@ import lombok.Data;
 
 @Entity
 @Data
-
 public class Capitulo {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // ➕ Adicionado para ordenar e identificar o número do capítulo
+    @Column(name = "numero_capitulo")
+    private Integer numeroCapitulo;
+
     @Column(name = "titulo_capitulo")
     private String tituloCapitulo;
 

@@ -4,7 +4,6 @@ import com.leitor_textos_api.pessoal.modelo.Capitulo;
 import com.leitor_textos_api.pessoal.repository.CapituloRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 

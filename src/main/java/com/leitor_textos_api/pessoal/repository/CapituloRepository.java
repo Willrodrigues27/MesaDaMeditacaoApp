@@ -5,10 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
-    @Repository
-    public interface CapituloRepository extends JpaRepository<Capitulo, Long> {
+@Repository
+public interface CapituloRepository extends JpaRepository<Capitulo, Long> {
 
-        List<Capitulo> findByLivroId(Long livroId);
+    List<Capitulo> findByLivroIdOrderByNumeroCapituloAsc(Long livroId);
 
-        List<Capitulo> findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCase(String conteudo, String tituloCapitulo);
-    }
+    List<Capitulo> findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCaseOrderByNumeroCapituloAsc(
+            String conteudo,
+            String tituloCapitulo
+    );
+}
