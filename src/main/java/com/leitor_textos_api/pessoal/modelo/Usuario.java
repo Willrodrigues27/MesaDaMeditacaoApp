@@ -25,7 +25,7 @@ public class Usuario {
     @Column(nullable = false)
     private Role role = Role.ROLE_LEITOR;
 
-    // 🔥 Lista de livros que este usuário tem permissão para ler
+    // 🟢 Mapeamento direto N:N para os livros liberados
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "usuario_livros_permitidos",
@@ -62,4 +62,13 @@ public class Usuario {
 
     public Set<Livro> getLivrosPermitidos() { return livrosPermitidos; }
     public void setLivrosPermitidos(Set<Livro> livrosPermitidos) { this.livrosPermitidos = livrosPermitidos; }
+
+    // Métodos auxiliares para adicionar/remover livros
+    public void adicionarLivroPermitido(Livro livro) {
+        this.livrosPermitidos.add(livro);
+    }
+
+    public void removerLivroPermitido(Livro livro) {
+        this.livrosPermitidos.remove(livro);
+    }
 }

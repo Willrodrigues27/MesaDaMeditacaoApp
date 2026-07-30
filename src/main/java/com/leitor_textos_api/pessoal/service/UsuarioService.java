@@ -8,6 +8,7 @@ import com.leitor_textos_api.pessoal.modelo.Role;
 import com.leitor_textos_api.pessoal.modelo.Usuario;
 import com.leitor_textos_api.pessoal.repository.LivroRepository;
 import com.leitor_textos_api.pessoal.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,37 +57,38 @@ public class UsuarioService {
         Usuario u = usuarioOpt.get();
         return new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole());
     }
+
+    // 🟢 3A. Sobrecarga com 2 parâmetros (redireciona para o de 3 parâmetros)
     public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
+        return validarAcessoAoLivro(usuarioId, livroId, null);
+    }
+
+    // 🟢 3B. Método principal com 3 parâmetros
+    public boolean validarAcessoAoLivro(Long usuarioId, Long livroId, Long secaoId) {
         if (usuarioId == null || livroId == null) return false;
 
-        // 1. Administrador tem acesso total
+        // 🟢 Se for ADMIN, libera o acesso direto sem travas
         if (ehAdministrador(usuarioId)) return true;
 
-        // 2. Busca o livro para conferir a seção
-        Optional<Livro> livroOpt = livroRepository.findById(livroId);
-        if (livroOpt.isPresent()) {
-            Livro livro = livroOpt.get();
-
-            if (livro.getSecaoId() != null) {
-                Long secaoId = livro.getSecaoId();
-
-                // 🟢 Seções totalmente liberadas para qualquer leitor: 0, 1 e 3
-                List<Long> secoesLiberadas = List.of(0L, 1L, 3L);
-                if (secoesLiberadas.contains(secaoId)) {
-                    return true; // Libera a leitura sem precisar de registro na tabela de permissões
-                }
-
-                // ⛔ Seções Bloqueadas por padrão (ex: 2 e 4)
-                List<Long> secoesBloqueadas = List.of(2L, 4L);
-                if (secoesBloqueadas.contains(secaoId)) {
-                    // Só libera se o admin concedeu permissão explícita individual no banco
-                    return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
-                }
+        // 🟢 Garantia: Se o secaoId não for passado no Controller, busca do banco pelo Livro
+        if (secaoId == null) {
+            Optional<Livro> livroOpt = livroRepository.findById(livroId);
+            if (livroOpt.isPresent()) {
+                secaoId = livroOpt.get().getSecaoId();
+            } else {
+                return false; // Livro não existe
             }
         }
 
-        // Caso padrão para qualquer livro fora da lista acima
-        return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
+        // 🛑 Seções Bloqueadas por padrão (ex: Seção 2)
+        List<Long> secoesBloqueadas = List.of(2L);
+        if (secoesBloqueadas.contains(secaoId)) {
+            // Só libera se o admin concedeu permissão explícita individual na tabela N:N
+            return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
+        }
+
+        // Caso padrão para livros de seções abertas
+        return true;
     }
 
     // 4. Verifica se o usuário é Administrador
@@ -95,5 +97,29 @@ public class UsuarioService {
         return usuarioRepository.findById(usuarioId)
                 .map(u -> u.getRole() == Role.ROLE_ADMIN)
                 .orElse(false);
+    }
+
+    // 5. Conceder permissão de um livro para um usuário
+    @Transactional
+    public void concederAcessoAoLivro(Long usuarioId, Long livroId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+        Livro livro = livroRepository.findById(livroId)
+                .orElseThrow(() -> new IllegalArgumentException("Livro não encontrado."));
+
+        usuario.adicionarLivroPermitido(livro);
+        usuarioRepository.save(usuario);
+    }
+
+    // 6. Revogar permissão de um livro de um usuário
+    @Transactional
+    public void revogarAcessoAoLivro(Long usuarioId, Long livroId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+        Livro livro = livroRepository.findById(livroId)
+                .orElseThrow(() -> new IllegalArgumentException("Livro não encontrado."));
+
+        usuario.removerLivroPermitido(livro);
+        usuarioRepository.save(usuario);
     }
 }
