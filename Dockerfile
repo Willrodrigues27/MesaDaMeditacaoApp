@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . .
 
 # Compila o projeto gerando o .jar
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -e -X
 
 # Estágio 2: Execução da aplicação
 FROM eclipse-temurin:17-jre
