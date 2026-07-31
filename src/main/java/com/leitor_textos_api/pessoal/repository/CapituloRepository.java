@@ -14,4 +14,6 @@ public interface CapituloRepository extends JpaRepository<Capitulo, Long> {
             String conteudo,
             String tituloCapitulo
     );
+         // Adicione esta linha:
+        List<Capitulo> findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCase(String conteudo, String tituloCapitulo);
 }
