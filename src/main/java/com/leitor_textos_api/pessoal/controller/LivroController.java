@@ -50,38 +50,44 @@ public class LivroController {
         return service.importarComCapitulos(livro);
     }
 
-    // ⛔ 1. TRAVA NO CONTEÚDO DOS CAPÍTULOS (AGORA ORDENADO POR NUMERO_CAPITULO)
-    // Valida se o usuário tem permissão para o livro antes de retornar os capítulos
+    // 1. Trava nos capítulos de um livro específico
     @GetMapping("/{id}/capitulos")
     public ResponseEntity<?> listarCapitulosDoLivro(
             @PathVariable Long id,
             @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
 
-        // Valida a permissão
         if (!usuarioService.validarAcessoAoLivro(usuarioId, id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Acesso negado a este conteúdo.");
         }
 
-        // 🟢 Busca os capítulos ordenados do menor para o maior (1, 2, 3... 10)
         List<Capitulo> capitulos = capituloRepository.findByLivroIdOrderByNumeroCapituloAsc(id);
         return ResponseEntity.ok(capitulos);
     }
 
-    // ⛔ 2. TRAVA DE SEÇÃO NA BUSCA DE LIVROS POR SEÇÃO
+    // 2. Trava ao buscar um único capítulo diretamente pelo ID dele (ex: resultado de busca)
+    @GetMapping("/capitulo/{capituloId}")
+    public ResponseEntity<?> buscarCapituloPorIdUnico(
+            @PathVariable Long capituloId,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+
+        return capituloRepository.findById(capituloId)
+                .map(capitulo -> {
+                    if (capitulo.getLivro() == null || !usuarioService.validarAcessoAoLivro(usuarioId, capitulo.getLivro().getId())) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body("Acesso negado a este capítulo.");
+                    }
+                    return ResponseEntity.ok(capitulo);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/secao/{id}")
-    public ResponseEntity<?> buscarLivrosPorIdDaSecao(
+    public ResponseEntity<List<Livro>> buscarLivrosPorIdDaSecao(
             @PathVariable Long id,
             @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
 
-        // Se for leitor e tentar buscar direto a seção 2, 3 ou 4, bloqueia
-        List<Long> secoesBloqueadas = List.of(2L, 3L, 4L);
-        if (secoesBloqueadas.contains(id) && !usuarioService.ehAdministrador(usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acesso restrito a esta seção.");
-        }
-
-        List<Livro> livros = service.listarPorSecao(id);
+        List<Livro> livros = service.listarPorSecaoEUsuario(id, usuarioId);
         return ResponseEntity.ok(livros);
     }
 
@@ -91,9 +97,19 @@ public class LivroController {
         return ResponseEntity.ok(livros);
     }
 
+    // PESQUISA PROTEGIDA: Agora recebe o Usuario-Id no header e aciona a filtragem do service
     @GetMapping("/pesquisa")
-    public ResponseEntity<List<Livro>> pesquisarLivros(@RequestParam("termo") String termo) {
-        List<Livro> resultados = livroRepository.findByTituloContainingIgnoreCaseOrCapitulosConteudoContainingIgnoreCase(termo, termo);
+    public ResponseEntity<List<Capitulo>> pesquisarCapitulos(
+            @RequestParam("termo") String termo,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+
+        List<Capitulo> resultados = service.realizarPesquisaAvancada(termo, usuarioId);
         return ResponseEntity.ok(resultados);
+    }
+
+    @GetMapping("/restritos")
+    public ResponseEntity<List<Livro>> listarLivrosRestritos() {
+        List<Livro> livrosRestritos = livroRepository.findByRestritoTrue();
+        return ResponseEntity.ok(livrosRestritos);
     }
 }

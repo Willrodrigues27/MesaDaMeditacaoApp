@@ -2,7 +2,7 @@ package com.leitor_textos_api.pessoal.controller;
 
 import com.leitor_textos_api.pessoal.dto.MusicaDTO;
 import com.leitor_textos_api.pessoal.modelo.Musica;
-import com.leitor_textos_api.pessoal.repositorio.MusicaRepository;
+import com.leitor_textos_api.pessoal.repository.MusicaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;

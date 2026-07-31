@@ -25,7 +25,7 @@ public class Usuario {
     @Column(nullable = false)
     private Role role = Role.ROLE_LEITOR;
 
-    // 🟢 Mapeamento direto N:N para os livros liberados
+    // Mapeamento direto N:N para os livros liberados
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "usuario_livros_permitidos",
@@ -44,7 +44,6 @@ public class Usuario {
     }
 
     // --- Getters e Setters ---
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

@@ -23,7 +23,7 @@ public class Livro {
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
-    // 🟢 Permite nulo temporariamente no banco ou trata o valor padrão caso venha nulo
+    // Permite nulo temporariamente ou trata o valor padrão caso venha nulo
     @Column(name = "restrito", nullable = false)
     @JsonProperty("restrito")
     private Boolean restrito = false;
@@ -72,6 +72,10 @@ public class Livro {
     }
 
     public Boolean getRestrito() {
+        // Seções públicas nunca são enviadas ao Android com restrito = true
+        if (this.secaoId != null && (this.secaoId == 0L || this.secaoId == 1L || this.secaoId == 5L)) {
+            return false;
+        }
         return restrito != null ? restrito : false;
     }
 
@@ -100,7 +104,7 @@ public class Livro {
         capitulo.setLivro(this);
     }
 
-    // 🟢 ESSENCIAL para o funcionamento do HashSet no relacionamento @ManyToMany
+    // ESSENCIAL para o funcionamento do HashSet no relacionamento @ManyToMany
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

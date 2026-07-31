@@ -86,7 +86,7 @@ public class CapituloController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 🔒 Salva um novo capítulo geral (Restrito a ADMIN)
+    // Salva um novo capítulo geral (Restrito a ADMIN)
     @PostMapping
     public ResponseEntity<?> salvar(
             @RequestBody Capitulo capitulo,

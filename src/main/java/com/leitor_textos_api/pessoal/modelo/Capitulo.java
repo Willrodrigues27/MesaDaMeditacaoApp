@@ -13,7 +13,7 @@ public class Capitulo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ➕ Adicionado para ordenar e identificar o número do capítulo
+    // Ordenar e identificar o número do capítulo
     @Column(name = "numero_capitulo")
     private Integer numeroCapitulo;
 

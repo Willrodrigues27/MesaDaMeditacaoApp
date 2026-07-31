@@ -58,42 +58,40 @@ public class UsuarioService {
         return new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole());
     }
 
-    // 🟢 3A. Sobrecarga com 2 parâmetros (redireciona para o de 3 parâmetros)
+    // Validação de Acesso que considera se o livro é de seção pública
     public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
-        return validarAcessoAoLivro(usuarioId, livroId, null);
-    }
+        if (livroId == null) {
+            return false;
+        }
 
-    // 🟢 3B. Método principal com 3 parâmetros
-    public boolean validarAcessoAoLivro(Long usuarioId, Long livroId, Long secaoId) {
-        if (usuarioId == null || livroId == null) return false;
+        // 1. Busca o livro para descobrir a qual seção ele pertence
+        Optional<Livro> livroOpt = livroRepository.findById(livroId);
+        if (livroOpt.isPresent()) {
+            Long secaoId = livroOpt.get().getSecaoId();
 
-        // 🟢 Se for ADMIN, libera o acesso direto sem travas
-        if (ehAdministrador(usuarioId)) return true;
-
-        // 🟢 Garantia: Se o secaoId não for passado no Controller, busca do banco pelo Livro
-        if (secaoId == null) {
-            Optional<Livro> livroOpt = livroRepository.findById(livroId);
-            if (livroOpt.isPresent()) {
-                secaoId = livroOpt.get().getSecaoId();
-            } else {
-                return false; // Livro não existe
+            // 2. SE FOR SEÇÃO PÚBLICA (0, 1, 5...): Liberado para qualquer leitor!
+            boolean ehSecaoPublica = secaoId == null || secaoId == 0L || secaoId == 1L || secaoId == 5L;
+            if (ehSecaoPublica) {
+                return true;
             }
         }
 
-        // 🛑 Seções Bloqueadas por padrão (ex: Seção 2)
-        List<Long> secoesBloqueadas = List.of(2L);
-        if (secoesBloqueadas.contains(secaoId)) {
-            // Só libera se o admin concedeu permissão explícita individual na tabela N:N
-            return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
+        // 3. SE FOR ADMIN: Acesso liberado para tudo
+        if (usuarioId != null && usuarioId > 0 && ehAdministrador(usuarioId)) {
+            return true;
         }
 
-        // Caso padrão para livros de seções abertas
-        return true;
+        // 4. SE FOR SEÇÃO RESTRITA: Valida se o leitor recebeu permissão explícita no banco
+        if (usuarioId == null || usuarioId <= 0) {
+            return false;
+        }
+
+        return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
     }
 
     // 4. Verifica se o usuário é Administrador
     public boolean ehAdministrador(Long usuarioId) {
-        if (usuarioId == null) return false;
+        if (usuarioId == null || usuarioId <= 0) return false;
         return usuarioRepository.findById(usuarioId)
                 .map(u -> u.getRole() == Role.ROLE_ADMIN)
                 .orElse(false);
@@ -121,5 +119,13 @@ public class UsuarioService {
 
         usuario.removerLivroPermitido(livro);
         usuarioRepository.save(usuario);
+    }
+
+    // 7. Listar todos os leitores
+    public List<UsuarioRespostaDTO> listarLeitores() {
+        return usuarioRepository.findByRole(Role.ROLE_LEITOR)
+                .stream()
+                .map(u -> new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole()))
+                .toList();
     }
 }

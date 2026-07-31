@@ -1,4 +1,4 @@
-package com.leitor_textos_api.pessoal.repositorio;
+package com.leitor_textos_api.pessoal.repository;
 
 import com.leitor_textos_api.pessoal.modelo.Musica;
 import org.springframework.data.jpa.repository.JpaRepository;
