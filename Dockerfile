@@ -1,13 +1,12 @@
-# Estágio 1: Build da aplicação usando Maven Wrapper
-FROM eclipse-temurin:17-jdk AS build
+# Estágio 1: Build da aplicação usando Maven nativo
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copia os arquivos do projeto
+# Copia todo o código-fonte para o container
 COPY . .
 
-# Concede permissão de execução ao mvnw e realiza o package
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+# Compila o projeto gerando o .jar
+RUN mvn clean package -DskipTests
 
 # Estágio 2: Execução da aplicação
 FROM eclipse-temurin:17-jre
