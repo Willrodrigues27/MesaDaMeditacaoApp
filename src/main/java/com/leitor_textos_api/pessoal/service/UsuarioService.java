@@ -26,14 +26,20 @@ public class UsuarioService {
 
     // 1. Cadastrar novo leitor
     public UsuarioRespostaDTO cadastrarLeitor(RegistroDTO dto) {
-        if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
+        String emailFormatado = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
+
+        if (emailFormatado.isEmpty()) {
+            throw new IllegalArgumentException("O e-mail é obrigatório.");
+        }
+
+        if (usuarioRepository.findByEmail(emailFormatado).isPresent()) {
             throw new IllegalArgumentException("Este e-mail já está cadastrado.");
         }
 
         Usuario novoUsuario = new Usuario();
-        novoUsuario.setNome(dto.getNome());
-        novoUsuario.setEmail(dto.getEmail());
-        novoUsuario.setSenha(dto.getSenha());
+        novoUsuario.setNome(dto.getNome() != null ? dto.getNome().trim() : "");
+        novoUsuario.setEmail(emailFormatado);
+        novoUsuario.setSenha(dto.getSenha() != null ? dto.getSenha().trim() : "");
         novoUsuario.setRole(Role.ROLE_LEITOR);
 
         Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
@@ -48,48 +54,48 @@ public class UsuarioService {
 
     // 2. Autenticar usuário
     public UsuarioRespostaDTO autenticar(LoginDTO dto) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(dto.getEmail());
+        String emailFormatado = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
+        String senhaFormatada = dto.getSenha() != null ? dto.getSenha().trim() : "";
 
-        if (usuarioOpt.isEmpty() || !usuarioOpt.get().getSenha().equals(dto.getSenha())) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(emailFormatado);
+
+        if (usuarioOpt.isEmpty()) {
             throw new IllegalArgumentException("E-mail ou senha incorretos.");
         }
 
-        Usuario u = usuarioOpt.get();
-        return new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole());
-    }
+        Usuario usuario = usuarioOpt.get();
 
-    // Validação de Acesso que considera se o livro é de seção pública
-    public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
-        if (livroId == null) {
-            return false;
+        if (!usuario.getSenha().equals(senhaFormatada)) {
+            throw new IllegalArgumentException("E-mail ou senha incorretos.");
         }
 
-        // 1. Busca o livro para descobrir a qual seção ele pertence
+        return new UsuarioRespostaDTO(
+                usuario.getId(),
+                usuario.getNome(),
+                usuario.getEmail(),
+                usuario.getRole()
+        );
+    }
+
+    // 3. Validação de Acesso
+    public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
+        if (livroId == null) return false;
+
         Optional<Livro> livroOpt = livroRepository.findById(livroId);
         if (livroOpt.isPresent()) {
             Long secaoId = livroOpt.get().getSecaoId();
-
-            // 2. SE FOR SEÇÃO PÚBLICA (0, 1, 5...): Liberado para qualquer leitor!
             boolean ehSecaoPublica = secaoId == null || secaoId == 0L || secaoId == 1L || secaoId == 5L;
-            if (ehSecaoPublica) {
-                return true;
-            }
+            if (ehSecaoPublica) return true;
         }
 
-        // 3. SE FOR ADMIN: Acesso liberado para tudo
-        if (usuarioId != null && usuarioId > 0 && ehAdministrador(usuarioId)) {
-            return true;
-        }
+        if (usuarioId != null && usuarioId > 0 && ehAdministrador(usuarioId)) return true;
 
-        // 4. SE FOR SEÇÃO RESTRITA: Valida se o leitor recebeu permissão explícita no banco
-        if (usuarioId == null || usuarioId <= 0) {
-            return false;
-        }
+        if (usuarioId == null || usuarioId <= 0) return false;
 
         return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
     }
 
-    // 4. Verifica se o usuário é Administrador
+    // 4. Verifica se é Administrador
     public boolean ehAdministrador(Long usuarioId) {
         if (usuarioId == null || usuarioId <= 0) return false;
         return usuarioRepository.findById(usuarioId)
@@ -97,7 +103,7 @@ public class UsuarioService {
                 .orElse(false);
     }
 
-    // 5. Conceder permissão de um livro para um usuário
+    // 5. Conceder permissão
     @Transactional
     public void concederAcessoAoLivro(Long usuarioId, Long livroId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -109,7 +115,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    // 6. Revogar permissão de um livro de um usuário
+    // 6. Revogar permissão
     @Transactional
     public void revogarAcessoAoLivro(Long usuarioId, Long livroId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -121,7 +127,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    // 7. Listar todos os leitores
+    // 7. Listar leitores
     public List<UsuarioRespostaDTO> listarLeitores() {
         return usuarioRepository.findByRole(Role.ROLE_LEITOR)
                 .stream()
