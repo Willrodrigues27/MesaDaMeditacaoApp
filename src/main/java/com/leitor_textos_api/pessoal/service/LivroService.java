@@ -42,7 +42,8 @@ public class LivroService {
 
     public Livro salvar(Livro livro) {
         if (livro.getSecaoId() != null) {
-            List<Long> secoesRestritas = List.of(2L, 3L, 4L);
+            // 🟢 Apenas a Seção 3 é marcada como restrita por padrão
+            List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
             }
@@ -52,7 +53,8 @@ public class LivroService {
 
     public Livro importarComCapitulos(Livro livro) {
         if (livro.getSecaoId() != null) {
-            List<Long> secoesRestritas = List.of(2L, 3L, 4L);
+            // 🟢 Apenas a Seção 3 é marcada como restrita por padrão
+            List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
             }
@@ -99,8 +101,8 @@ public class LivroService {
             return todosOsLivros;
         }
 
-        // 2. SE FOR SEÇÃO PÚBLICA: Liberada para todos
-        boolean ehSecaoRestrita = secaoId != null && (secaoId == 2L || secaoId == 3L || secaoId == 4L);
+        // 2. SE FOR SEÇÃO PÚBLICA: Liberada para todos (Seção 3 é a única restrita)
+        boolean ehSecaoRestrita = secaoId != null && secaoId == 3L;
 
         if (!ehSecaoRestrita) {
             System.out.println(">>> [ACESSO PÚBLICO]: Seção " + secaoId + " liberada para todos.");
@@ -112,7 +114,7 @@ public class LivroService {
             return livrosPublicos;
         }
 
-        // 3. SE FOR LEITOR EM SEÇÃO RESTRITA (2, 3 ou 4)
+        // 3. SE FOR LEITOR NA SEÇÃO RESTRITA (Seção 3 - Ensinos Família)
         System.out.println(">>> [ACESSO LEITOR RESTRITO]: Validando permissões na Seção " + secaoId);
         List<Livro> livrosDaSecao = repository.findBySecaoId(secaoId);
 
