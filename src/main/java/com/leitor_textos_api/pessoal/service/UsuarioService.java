@@ -134,4 +134,21 @@ public class UsuarioService {
                 .map(u -> new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole()))
                 .toList();
     }
+
+    @Transactional
+    public void liberarTodosLivrosParaUsuario(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        List<Livro> todosLivros = livroRepository.findAll();
+
+        // Adiciona todos os livros à lista de livros permitidos do usuário
+        for (Livro livro : todosLivros) {
+            if (!usuario.getLivrosPermitidos().contains(livro)) {
+                usuario.getLivrosPermitidos().add(livro);
+            }
+        }
+
+        usuarioRepository.save(usuario);
+    }
 }

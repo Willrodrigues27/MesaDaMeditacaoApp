@@ -93,4 +93,10 @@ public class UsuarioController {
         List<UsuarioRespostaDTO> leitores = usuarioService.listarLeitores();
         return ResponseEntity.ok(leitores);
     }
+
+    @PostMapping("/{usuarioId}/liberar-todos")
+    public ResponseEntity<Void> liberarTodosParaUsuario(@PathVariable Long usuarioId) {
+        usuarioService.liberarTodosLivrosParaUsuario(usuarioId);
+        return ResponseEntity.ok().build();
+    }
 }
