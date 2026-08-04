@@ -18,6 +18,7 @@ public class MusicaService {
     public Musica salvarMusica(MusicaDTO dto) {
         Musica musica = new Musica();
         musica.setTitulo(dto.getTitulo());
+        musica.setIntroducao(dto.getIntroducao());
         musica.setSecaoId(dto.getSecaoId());
         musica.setMetadados(dto.getMetadados());
 
@@ -37,5 +38,28 @@ public class MusicaService {
 
     public List<Musica> listarPorSecao(Long secaoId) {
         return musicaRepository.findBySecaoIdOrderByTituloAsc(secaoId);
+    }
+
+    public Musica atualizarMusica(Long id, MusicaDTO dto) {
+        Musica musicaExistente = musicaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Música não encontrada"));
+
+        musicaExistente.setTitulo(dto.getTitulo());
+        musicaExistente.setIntroducao(dto.getIntroducao());
+        musicaExistente.setSecaoId(dto.getSecaoId());
+
+        // Se um novo texto bruto com cifras foi fornecido, re-processa a composição
+        if (dto.getTextoBruto() != null && !dto.getTextoBruto().isBlank()) {
+            musicaExistente.setComposicao(CifraParser.converterTextoParaComposicao(dto.getTextoBruto()));
+        }
+
+        return musicaRepository.save(musicaExistente);
+    }
+
+    public void deletarMusica(Long id) {
+        if (!musicaRepository.existsById(id)) {
+            throw new RuntimeException("Música não encontrada");
+        }
+        musicaRepository.deleteById(id);
     }
 }

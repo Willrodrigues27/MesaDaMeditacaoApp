@@ -19,6 +19,8 @@ public class Musica {
 
     private String titulo;
 
+    private String introducao;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadados;

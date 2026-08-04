@@ -61,8 +61,6 @@ public class CapituloController {
 
         Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
 
-        // 🟢 Passa pelo usuarioService.validarAcessoAoLivro
-        // (Ele vai liberar seções públicas mesmo se idFinal for null)
         boolean possuiAcesso = usuarioService.validarAcessoAoLivro(idFinal, livroId);
 
         if (!possuiAcesso) {
@@ -106,9 +104,21 @@ public class CapituloController {
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    // Método para editar
+    // 🟢 Método para EDITAR capítulo (Restrito a ADMIN via Header)
     @PutMapping("/{id}")
-    public ResponseEntity<Capitulo> atualizar(@PathVariable Long id, @RequestBody Capitulo capitulo){
+    public ResponseEntity<?> atualizar(
+            @PathVariable Long id,
+            @RequestBody Capitulo capitulo,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem editar textos.");
+        }
+
         try {
             return ResponseEntity.ok(service.atualizar(id, capitulo));
         } catch (RuntimeException e){
@@ -116,9 +126,20 @@ public class CapituloController {
         }
     }
 
-    // Método DELETE
+    // Método DELETE (Restrito a ADMIN via Header)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id){
+    public ResponseEntity<?> deletar(
+            @PathVariable Long id,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem excluir textos.");
+        }
+
         service.deletar(id);
         return ResponseEntity.noContent().build();
     }

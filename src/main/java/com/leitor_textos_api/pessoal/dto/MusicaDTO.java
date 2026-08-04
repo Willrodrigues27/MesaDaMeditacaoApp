@@ -12,6 +12,7 @@ import java.util.Map;
 public class MusicaDTO {
     private String titulo;
     private Long secaoId;
+    private String introducao;
     private String textoBruto;
     private Map<String, Object> metadados;
     private List<LinhaCifraDTO> composicao;

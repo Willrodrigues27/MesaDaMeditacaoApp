@@ -48,4 +48,49 @@ public class MusicaController {
         Musica salva = musicaService.salvarMusica(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(salva);
     }
+
+    // 🟢 EDITAR MÚSICA (Restrito a ADMIN via Header)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizar(
+            @PathVariable Long id,
+            @RequestBody MusicaDTO dto,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem editar músicas.");
+        }
+
+        try {
+            Musica atualizada = musicaService.atualizarMusica(id, dto);
+            return ResponseEntity.ok(atualizada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Música não encontrada.");
+        }
+    }
+
+    // 🟢 DELETAR MÚSICA (Restrito a ADMIN via Header)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletar(
+            @PathVariable Long id,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem excluir músicas.");
+        }
+
+        try {
+            musicaService.deletarMusica(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Música não encontrada.");
+        }
+    }
 }
