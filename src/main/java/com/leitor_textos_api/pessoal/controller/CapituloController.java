@@ -36,9 +36,12 @@ public class CapituloController {
     public ResponseEntity<?> adicionarCapitulo(
             @PathVariable Long livroId,
             @RequestBody Capitulo capitulo,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        if (usuarioId == null || !usuarioService.ehAdministrador(usuarioId)) {
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Acesso negado: Apenas administradores podem cadastrar novos capítulos.");
         }
@@ -49,19 +52,18 @@ public class CapituloController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // Listar capítulos por livro (Valida se o usuário tem acesso ao livro ou é Admin)
+    // Listar capítulos por livro
     @GetMapping("/livro/{livroId}")
     public ResponseEntity<?> listarPorLivro(
             @PathVariable Long livroId,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Usuário não identificado no cabeçalho (X-Usuario-Id).");
-        }
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
 
-        // Valida se o usuário tem o livro liberado ou se é Admin
-        boolean possuiAcesso = usuarioService.validarAcessoAoLivro(usuarioId, livroId);
+        // 🟢 Passa pelo usuarioService.validarAcessoAoLivro
+        // (Ele vai liberar seções públicas mesmo se idFinal for null)
+        boolean possuiAcesso = usuarioService.validarAcessoAoLivro(idFinal, livroId);
 
         if (!possuiAcesso) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -90,9 +92,12 @@ public class CapituloController {
     @PostMapping
     public ResponseEntity<?> salvar(
             @RequestBody Capitulo capitulo,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        if (usuarioId == null || !usuarioService.ehAdministrador(usuarioId)) {
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Acesso negado: Apenas administradores podem salvar novos textos.");
         }
@@ -101,7 +106,7 @@ public class CapituloController {
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    // Metodo para editar (Restrito a ADMIN se preferir, ou mantido)
+    // Método para editar
     @PutMapping("/{id}")
     public ResponseEntity<Capitulo> atualizar(@PathVariable Long id, @RequestBody Capitulo capitulo){
         try {
@@ -111,7 +116,7 @@ public class CapituloController {
         }
     }
 
-    // Metodo DELETE (Restrito a ADMIN se preferir, ou mantido)
+    // Método DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id){
         service.deletar(id);

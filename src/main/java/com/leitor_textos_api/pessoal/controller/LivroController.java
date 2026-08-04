@@ -54,9 +54,12 @@ public class LivroController {
     @GetMapping("/{id}/capitulos")
     public ResponseEntity<?> listarCapitulosDoLivro(
             @PathVariable Long id,
-            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        if (!usuarioService.validarAcessoAoLivro(usuarioId, id)) {
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (!usuarioService.validarAcessoAoLivro(idFinal, id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Acesso negado a este conteúdo.");
         }
@@ -65,15 +68,18 @@ public class LivroController {
         return ResponseEntity.ok(capitulos);
     }
 
-    // 2. Trava ao buscar um único capítulo diretamente pelo ID dele (ex: resultado de busca)
+    // 2. Trava ao buscar um único capítulo diretamente pelo ID dele
     @GetMapping("/capitulo/{capituloId}")
     public ResponseEntity<?> buscarCapituloPorIdUnico(
             @PathVariable Long capituloId,
-            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
 
         return capituloRepository.findById(capituloId)
                 .map(capitulo -> {
-                    if (capitulo.getLivro() == null || !usuarioService.validarAcessoAoLivro(usuarioId, capitulo.getLivro().getId())) {
+                    if (capitulo.getLivro() == null || !usuarioService.validarAcessoAoLivro(idFinal, capitulo.getLivro().getId())) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .body("Acesso negado a este capítulo.");
                     }
@@ -85,9 +91,11 @@ public class LivroController {
     @GetMapping("/secao/{id}")
     public ResponseEntity<List<Livro>> buscarLivrosPorIdDaSecao(
             @PathVariable Long id,
-            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        List<Livro> livros = service.listarPorSecaoEUsuario(id, usuarioId);
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+        List<Livro> livros = service.listarPorSecaoEUsuario(id, idFinal);
         return ResponseEntity.ok(livros);
     }
 
@@ -97,13 +105,15 @@ public class LivroController {
         return ResponseEntity.ok(livros);
     }
 
-    // PESQUISA PROTEGIDA: Agora recebe o Usuario-Id no header e aciona a filtragem do service
+    // PESQUISA PROTEGIDA
     @GetMapping("/pesquisa")
     public ResponseEntity<List<Capitulo>> pesquisarCapitulos(
             @RequestParam("termo") String termo,
-            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId) {
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
 
-        List<Capitulo> resultados = service.realizarPesquisaAvancada(termo, usuarioId);
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+        List<Capitulo> resultados = service.realizarPesquisaAvancada(termo, idFinal);
         return ResponseEntity.ok(resultados);
     }
 

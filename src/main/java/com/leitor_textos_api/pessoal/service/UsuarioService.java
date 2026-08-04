@@ -77,21 +77,28 @@ public class UsuarioService {
         );
     }
 
-    // 3. Validação de Acesso
+    // 3. Validação de Acesso (Ajustada para liberar todas as seções públicas, incluindo a Seção 2)
     public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
         if (livroId == null) return false;
 
         Optional<Livro> livroOpt = livroRepository.findById(livroId);
         if (livroOpt.isPresent()) {
-            Long secaoId = livroOpt.get().getSecaoId();
-            boolean ehSecaoPublica = secaoId == null || secaoId == 0L || secaoId == 1L || secaoId == 5L;
+            Livro livro = livroOpt.get();
+            Long secaoId = livro.getSecaoId();
+
+            // 🟢 SE NÃO FOR DA SEÇÃO 3 (RESTRITA), LIBERA AUTOMATICAMENTE!
+            // (Isso cobre Seção 1, Seção 2, Seção 4, Seção 5, etc.)
+            boolean ehSecaoPublica = secaoId == null || secaoId != 3L;
             if (ehSecaoPublica) return true;
         }
 
+        // Se for ADMINISTRADOR: Acesso total liberado
         if (usuarioId != null && usuarioId > 0 && ehAdministrador(usuarioId)) return true;
 
+        // Se o usuário não estiver identificado na seção restrita (3), nega
         if (usuarioId == null || usuarioId <= 0) return false;
 
+        // Se for Seção 3 e for LEITOR: Checa se possui a permissão no banco
         return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
     }
 
@@ -140,10 +147,9 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        List<Livro> todosLivros = livroRepository.findAll();
+        List<Livro> livrosRestritos = livroRepository.findByRestritoTrue();
 
-        // Adiciona todos os livros à lista de livros permitidos do usuário
-        for (Livro livro : todosLivros) {
+        for (Livro livro : livrosRestritos) {
             if (!usuario.getLivrosPermitidos().contains(livro)) {
                 usuario.getLivrosPermitidos().add(livro);
             }

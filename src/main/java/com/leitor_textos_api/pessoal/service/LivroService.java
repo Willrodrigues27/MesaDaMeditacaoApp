@@ -42,7 +42,7 @@ public class LivroService {
 
     public Livro salvar(Livro livro) {
         if (livro.getSecaoId() != null) {
-            // 🟢 Apenas a Seção 3 é marcada como restrita por padrão
+            // Apenas a Seção 3 é marcada como restrita por padrão
             List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
@@ -53,7 +53,7 @@ public class LivroService {
 
     public Livro importarComCapitulos(Livro livro) {
         if (livro.getSecaoId() != null) {
-            // 🟢 Apenas a Seção 3 é marcada como restrita por padrão
+            // Apenas a Seção 3 é marcada como restrita por padrão
             List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
@@ -146,13 +146,26 @@ public class LivroService {
             return todosOsCapitulos;
         }
 
-        // Se for LEITOR, filtra mantendo apenas capítulos dos livros liberados
+        // Se for LEITOR, filtra mantendo capítulos das seções públicas OU da seção restrita apenas se tiver permissão
         return todosOsCapitulos.stream()
                 .filter(capitulo -> {
                     if (capitulo.getLivro() == null) {
                         return false;
                     }
-                    return usuarioService.validarAcessoAoLivro(usuarioId, capitulo.getLivro().getId());
+
+                    Livro livro = capitulo.getLivro();
+
+                    // 🟢 Se NÃO for a Seção 3 (Restrita), o acesso é livre!
+                    boolean ehSecaoRestrita = livro.getSecaoId() != null && livro.getSecaoId() == 3L;
+                    if (!ehSecaoRestrita) {
+                        return true;
+                    }
+
+                    // 🔒 Se for a Seção 3, aí sim valida se o leitor tem permissão
+                    if (usuarioId == null || usuarioId <= 0) {
+                        return false;
+                    }
+                    return usuarioService.validarAcessoAoLivro(usuarioId, livro.getId());
                 })
                 .collect(Collectors.toList());
     }
