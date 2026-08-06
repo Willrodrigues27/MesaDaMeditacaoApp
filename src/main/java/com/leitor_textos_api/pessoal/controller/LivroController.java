@@ -122,4 +122,8 @@ public class LivroController {
         List<Livro> livrosRestritos = livroRepository.findByRestritoTrue();
         return ResponseEntity.ok(livrosRestritos);
     }
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("OK");
+    }
 }
