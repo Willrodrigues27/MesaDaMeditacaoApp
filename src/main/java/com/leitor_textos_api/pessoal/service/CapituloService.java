@@ -32,6 +32,17 @@ public class CapituloService {
         return repository.findById(id).map(capitulo -> {
             capitulo.setTituloCapitulo(capituloAtualizado.getTituloCapitulo());
             capitulo.setConteudo(capituloAtualizado.getConteudo());
+
+            // Preserva/Atualiza o número do capítulo para manter a ordenação
+            if (capituloAtualizado.getNumeroCapitulo() != null && capituloAtualizado.getNumeroCapitulo() > 0) {
+                capitulo.setNumeroCapitulo(capituloAtualizado.getNumeroCapitulo());
+            }
+
+            // Garante que a associação com o Livro pai não seja perdida
+            if (capituloAtualizado.getLivro() != null) {
+                capitulo.setLivro(capituloAtualizado.getLivro());
+            }
+
             return repository.save(capitulo);
         }).orElseThrow(() -> new RuntimeException("Capítulo não encontrado!"));
     }
