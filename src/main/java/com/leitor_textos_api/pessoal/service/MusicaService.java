@@ -3,6 +3,7 @@ package com.leitor_textos_api.pessoal.service;
 import com.leitor_textos_api.pessoal.dto.MusicaDTO;
 import com.leitor_textos_api.pessoal.modelo.Musica;
 import com.leitor_textos_api.pessoal.repository.MusicaRepository;
+import com.leitor_textos_api.pessoal.repository.local.MusicaLocalRepository;
 import com.leitor_textos_api.pessoal.util.CifraParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,10 @@ import java.util.List;
 public class MusicaService {
 
     @Autowired
-    private MusicaRepository musicaRepository;
+    private MusicaRepository musicaRepository; // Neon DB
+
+    @Autowired(required = false)
+    private MusicaLocalRepository musicaLocalRepository; // db_pessoal Local
 
     public Musica salvarMusica(MusicaDTO dto) {
         Musica musica = new Musica();
@@ -22,14 +26,16 @@ public class MusicaService {
         musica.setSecaoId(dto.getSecaoId());
         musica.setMetadados(dto.getMetadados());
 
-        // Se enviou texto colado, converte automaticamente em linhas/cifras
         if (dto.getTextoBruto() != null && !dto.getTextoBruto().isBlank()) {
             musica.setComposicao(CifraParser.converterTextoParaComposicao(dto.getTextoBruto()));
         } else {
             musica.setComposicao(dto.getComposicao());
         }
 
-        return musicaRepository.save(musica);
+        Musica salvaNeon = musicaRepository.save(musica);
+        salvarNoLocalSeguro(salvaNeon);
+
+        return salvaNeon;
     }
 
     public List<Musica> listarTodas() {
@@ -48,12 +54,14 @@ public class MusicaService {
         musicaExistente.setIntroducao(dto.getIntroducao());
         musicaExistente.setSecaoId(dto.getSecaoId());
 
-        // Se um novo texto bruto com cifras foi fornecido, re-processa a composição
         if (dto.getTextoBruto() != null && !dto.getTextoBruto().isBlank()) {
             musicaExistente.setComposicao(CifraParser.converterTextoParaComposicao(dto.getTextoBruto()));
         }
 
-        return musicaRepository.save(musicaExistente);
+        Musica atualizadaNeon = musicaRepository.save(musicaExistente);
+        salvarNoLocalSeguro(atualizadaNeon);
+
+        return atualizadaNeon;
     }
 
     public void deletarMusica(Long id) {
@@ -61,5 +69,23 @@ public class MusicaService {
             throw new RuntimeException("Música não encontrada");
         }
         musicaRepository.deleteById(id);
+
+        if (musicaLocalRepository != null) {
+            try {
+                musicaLocalRepository.deleteById(id);
+            } catch (Exception e) {
+                System.err.println("Aviso [Backup Local]: Não foi possível excluir música ID " + id + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private void salvarNoLocalSeguro(Musica musica) {
+        if (musicaLocalRepository != null) {
+            try {
+                musicaLocalRepository.save(musica);
+            } catch (Exception e) {
+                System.err.println("Aviso [Backup Local]: Falha ao sincronizar música no banco pessoal: " + e.getMessage());
+            }
+        }
     }
 }

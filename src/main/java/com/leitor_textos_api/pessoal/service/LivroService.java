@@ -4,6 +4,8 @@ import com.leitor_textos_api.pessoal.modelo.Capitulo;
 import com.leitor_textos_api.pessoal.modelo.Livro;
 import com.leitor_textos_api.pessoal.repository.CapituloRepository;
 import com.leitor_textos_api.pessoal.repository.LivroRepository;
+import com.leitor_textos_api.pessoal.repository.local.LivroLocalRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -17,6 +19,9 @@ public class LivroService {
     private final CapituloRepository capituloRepository;
     private final UsuarioService usuarioService;
 
+    @Autowired(required = false)
+    private LivroLocalRepository repositoryLocal;
+
     public LivroService(LivroRepository repository,
                         CapituloRepository capituloRepository,
                         UsuarioService usuarioService) {
@@ -29,7 +34,6 @@ public class LivroService {
         return repository.findByGeneroIgnoreCase(genero);
     }
 
-    // Listar todos com ordenação natural
     public List<Livro> listarTodos(){
         List<Livro> livros = repository.findAll();
         ordenarLivrosManualmente(livros);
@@ -42,18 +46,18 @@ public class LivroService {
 
     public Livro salvar(Livro livro) {
         if (livro.getSecaoId() != null) {
-            // Apenas a Seção 3 é marcada como restrita por padrão
             List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
             }
         }
-        return repository.save(livro);
+        Livro salvoNeon = repository.save(livro);
+        salvarNoLocalSeguro(salvoNeon);
+        return salvoNeon;
     }
 
     public Livro importarComCapitulos(Livro livro) {
         if (livro.getSecaoId() != null) {
-            // Apenas a Seção 3 é marcada como restrita por padrão
             List<Long> secoesRestritas = List.of(3L);
             if (secoesRestritas.contains(livro.getSecaoId())) {
                 livro.setRestrito(true);
@@ -69,7 +73,9 @@ public class LivroService {
                 }
             }
         }
-        return repository.save(livro);
+        Livro salvoNeon = repository.save(livro);
+        salvarNoLocalSeguro(salvoNeon);
+        return salvoNeon;
     }
 
     public List<Capitulo> listarCapitulos(Long id) {
@@ -79,7 +85,6 @@ public class LivroService {
         return capituloRepository.findByLivroIdOrderByNumeroCapituloAsc(id);
     }
 
-    // Listar por Seção padrão
     public List<Livro> listarPorSecao(Long secaoId) {
         List<Livro> livros = repository.findBySecaoId(secaoId);
         ordenarLivrosManualmente(livros);
@@ -87,35 +92,22 @@ public class LivroService {
     }
 
     public List<Livro> listarPorSecaoEUsuario(Long secaoId, Long usuarioId) {
-        System.out.println(">>> ------------------------------------------------");
-        System.out.println(">>> REQUISIÇÃO SEÇÃO: " + secaoId + " | USUARIO_ID: " + usuarioId);
-
-        // 1. SE FOR ADMINISTRADOR: Liberdade total
         if (usuarioId != null && usuarioId > 0 && usuarioService.ehAdministrador(usuarioId)) {
-            System.out.println(">>> [ACESSO ADMIN CONFIRMADO]: Exibindo TODOS os livros da seção " + secaoId);
             List<Livro> todosOsLivros = repository.findBySecaoId(secaoId);
-
             todosOsLivros.forEach(livro -> livro.setRestrito(false));
-
             ordenarLivrosManualmente(todosOsLivros);
             return todosOsLivros;
         }
 
-        // 2. SE FOR SEÇÃO PÚBLICA: Liberada para todos (Seção 3 é a única restrita)
         boolean ehSecaoRestrita = secaoId != null && secaoId == 3L;
 
         if (!ehSecaoRestrita) {
-            System.out.println(">>> [ACESSO PÚBLICO]: Seção " + secaoId + " liberada para todos.");
             List<Livro> livrosPublicos = repository.findBySecaoId(secaoId);
-
             livrosPublicos.forEach(livro -> livro.setRestrito(false));
-
             ordenarLivrosManualmente(livrosPublicos);
             return livrosPublicos;
         }
 
-        // 3. SE FOR LEITOR NA SEÇÃO RESTRITA (Seção 3 - Ensinos Família)
-        System.out.println(">>> [ACESSO LEITOR RESTRITO]: Validando permissões na Seção " + secaoId);
         List<Livro> livrosDaSecao = repository.findBySecaoId(secaoId);
 
         List<Livro> livrosVisiveis = livrosDaSecao.stream()
@@ -131,22 +123,18 @@ public class LivroService {
         return livrosVisiveis;
     }
 
-    // PESQUISA AVANÇADA PROTEGIDA POR USUÁRIO
     public List<Capitulo> realizarPesquisaAvancada(String termo, Long usuarioId) {
         if (termo == null || termo.trim().isEmpty()) {
             return List.of();
         }
 
-        // Busca todos os capítulos que batem com o termo no título ou no conteúdo
         List<Capitulo> todosOsCapitulos = capituloRepository
                 .findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCase(termo, termo);
 
-        // Se for ADMIN, libera todos os resultados encontrados
         if (usuarioId != null && usuarioId > 0 && usuarioService.ehAdministrador(usuarioId)) {
             return todosOsCapitulos;
         }
 
-        // Se for LEITOR, filtra mantendo capítulos das seções públicas OU da seção restrita apenas se tiver permissão
         return todosOsCapitulos.stream()
                 .filter(capitulo -> {
                     if (capitulo.getLivro() == null) {
@@ -154,14 +142,11 @@ public class LivroService {
                     }
 
                     Livro livro = capitulo.getLivro();
-
-                    // 🟢 Se NÃO for a Seção 3 (Restrita), o acesso é livre!
                     boolean ehSecaoRestrita = livro.getSecaoId() != null && livro.getSecaoId() == 3L;
                     if (!ehSecaoRestrita) {
                         return true;
                     }
 
-                    // 🔒 Se for a Seção 3, aí sim valida se o leitor tem permissão
                     if (usuarioId == null || usuarioId <= 0) {
                         return false;
                     }
@@ -170,7 +155,16 @@ public class LivroService {
                 .collect(Collectors.toList());
     }
 
-    // Ordenação Alfanumérica/Natural em memória
+    private void salvarNoLocalSeguro(Livro livro) {
+        if (repositoryLocal != null) {
+            try {
+                repositoryLocal.save(livro);
+            } catch (Exception e) {
+                System.err.println("Aviso [Backup Local]: Falha ao sincronizar livro no banco pessoal: " + e.getMessage());
+            }
+        }
+    }
+
     private void ordenarLivrosManualmente(List<Livro> livros) {
         livros.sort((l1, l2) -> {
             Integer num1 = extrairNumeroDoTitulo(l1.getTitulo());
@@ -189,7 +183,6 @@ public class LivroService {
         });
     }
 
-    // Extrai o primeiro número do título
     private Integer extrairNumeroDoTitulo(String titulo) {
         if (titulo == null) return null;
         Matcher matcher = Pattern.compile("\\d+").matcher(titulo);

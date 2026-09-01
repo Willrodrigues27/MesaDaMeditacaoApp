@@ -2,6 +2,7 @@ package com.leitor_textos_api.pessoal.service;
 
 import com.leitor_textos_api.pessoal.modelo.Capitulo;
 import com.leitor_textos_api.pessoal.repository.CapituloRepository;
+import com.leitor_textos_api.pessoal.repository.local.CapituloLocalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -11,7 +12,10 @@ import java.util.Optional;
 public class CapituloService {
 
     @Autowired
-    private CapituloRepository repository;
+    private CapituloRepository repository; // Neon DB
+
+    @Autowired(required = false)
+    private CapituloLocalRepository repositoryLocal; // db_pessoal Local
 
     public List<Capitulo> buscarTodos(){
         return repository.findAll();
@@ -25,29 +29,52 @@ public class CapituloService {
         if (capitulo.getTituloCapitulo() == null || capitulo.getTituloCapitulo().isEmpty()){
             throw new RuntimeException("O capítulo precisa de um título!");
         }
-        return repository.save(capitulo);
+        Capitulo salvoNeon = repository.save(capitulo);
+
+        // Réplica automática no banco local
+        salvarNoLocalSeguro(salvoNeon);
+
+        return salvoNeon;
     }
 
     public Capitulo atualizar(Long id, Capitulo capituloAtualizado){
-        return repository.findById(id).map(capitulo -> {
+        Capitulo atualizado = repository.findById(id).map(capitulo -> {
             capitulo.setTituloCapitulo(capituloAtualizado.getTituloCapitulo());
             capitulo.setConteudo(capituloAtualizado.getConteudo());
 
-            // Preserva/Atualiza o número do capítulo para manter a ordenação
             if (capituloAtualizado.getNumeroCapitulo() != null && capituloAtualizado.getNumeroCapitulo() > 0) {
                 capitulo.setNumeroCapitulo(capituloAtualizado.getNumeroCapitulo());
             }
 
-            // Garante que a associação com o Livro pai não seja perdida
             if (capituloAtualizado.getLivro() != null) {
                 capitulo.setLivro(capituloAtualizado.getLivro());
             }
 
             return repository.save(capitulo);
         }).orElseThrow(() -> new RuntimeException("Capítulo não encontrado!"));
+
+        salvarNoLocalSeguro(atualizado);
+        return atualizado;
     }
 
     public void deletar(Long id){
         repository.deleteById(id);
+        if (repositoryLocal != null) {
+            try {
+                repositoryLocal.deleteById(id);
+            } catch (Exception e) {
+                System.err.println("Aviso [Backup Local]: Não foi possível excluir capítulo ID " + id + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private void salvarNoLocalSeguro(Capitulo capitulo) {
+        if (repositoryLocal != null) {
+            try {
+                repositoryLocal.save(capitulo);
+            } catch (Exception e) {
+                System.err.println("Aviso [Backup Local]: Falha ao sincronizar capítulo no banco pessoal: " + e.getMessage());
+            }
+        }
     }
 }
