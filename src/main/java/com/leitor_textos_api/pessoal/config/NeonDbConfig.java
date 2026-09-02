@@ -7,6 +7,7 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -16,12 +17,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import jakarta.persistence.EntityManagerFactory;
 
+@Profile("!local")
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
         entityManagerFactoryRef = "neonEntityManagerFactory",
         transactionManagerRef = "neonTransactionManager",
-        // 🟢 Corrigido: Não escaneia a pasta 'local' para não duplicar repositórios
+
         basePackages = { "com.leitor_textos_api.pessoal.repository" },
         excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
                 type = org.springframework.context.annotation.FilterType.REGEX,
@@ -32,7 +34,7 @@ public class NeonDbConfig {
 
     @Primary
     @Bean(name = "neonProperties")
-    @ConfigurationProperties("spring.datasource") // 🟢 Alterado de spring.datasource.neon para bater com o Render
+    @ConfigurationProperties("spring.datasource")
     public DataSourceProperties dataSourceProperties() {
         return new DataSourceProperties();
     }
