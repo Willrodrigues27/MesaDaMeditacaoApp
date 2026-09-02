@@ -21,13 +21,18 @@ import jakarta.persistence.EntityManagerFactory;
 @EnableJpaRepositories(
         entityManagerFactoryRef = "neonEntityManagerFactory",
         transactionManagerRef = "neonTransactionManager",
-        basePackages = { "com.leitor_textos_api.pessoal.repository" }
+        // 🟢 Corrigido: Não escaneia a pasta 'local' para não duplicar repositórios
+        basePackages = { "com.leitor_textos_api.pessoal.repository" },
+        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.REGEX,
+                pattern = "com\\.leitor_textos_api\\.pessoal\\.repository\\.local\\..*"
+        )
 )
 public class NeonDbConfig {
 
     @Primary
     @Bean(name = "neonProperties")
-    @ConfigurationProperties("spring.datasource.neon")
+    @ConfigurationProperties("spring.datasource") // 🟢 Alterado de spring.datasource.neon para bater com o Render
     public DataSourceProperties dataSourceProperties() {
         return new DataSourceProperties();
     }

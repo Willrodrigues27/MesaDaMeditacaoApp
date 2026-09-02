@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -14,6 +15,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 import jakarta.persistence.EntityManagerFactory;
 
+@Profile("local") // 🟢 IMPORTANTE: Só será executado se o profile ativo for "local"
 @Configuration
 @EnableJpaRepositories(
         entityManagerFactoryRef = "localEntityManagerFactory",
@@ -22,13 +24,13 @@ import jakarta.persistence.EntityManagerFactory;
 )
 public class LocalDbConfig {
 
-    @Value("${spring.datasource.local.url}")
+    @Value("${spring.datasource.local.url:jdbc:postgresql://localhost:5432/db_local}")
     private String url;
 
-    @Value("${spring.datasource.local.username}")
+    @Value("${spring.datasource.local.username:postgres}")
     private String username;
 
-    @Value("${spring.datasource.local.password}")
+    @Value("${spring.datasource.local.password:postgres}")
     private String password;
 
     @Bean(name = "localProperties")
