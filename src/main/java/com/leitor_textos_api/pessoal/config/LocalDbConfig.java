@@ -15,13 +15,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 import jakarta.persistence.EntityManagerFactory;
 
-@Profile("local") // 🟢 IMPORTANTE: Só será executado se o profile ativo for "local"
-@Configuration
-@EnableJpaRepositories(
-        entityManagerFactoryRef = "localEntityManagerFactory",
-        transactionManagerRef = "localTransactionManager",
-        basePackages = { "com.leitor_textos_api.pessoal.repository.local" }
-)
+//@Profile("local")
+//@Configuration
+//@EnableJpaRepositories(
+//        entityManagerFactoryRef = "localEntityManagerFactory",
+//        transactionManagerRef = "localTransactionManager",
+//        basePackages = { "com.leitor_textos_api.pessoal.repository.local" }
+//)
 public class LocalDbConfig {
 
     @Value("${spring.datasource.local.url:jdbc:postgresql://localhost:5432/db_local}")

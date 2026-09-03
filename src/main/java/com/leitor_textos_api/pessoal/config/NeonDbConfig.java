@@ -17,19 +17,19 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import jakarta.persistence.EntityManagerFactory;
 
-@Profile("!local")
-@Configuration
-@EnableTransactionManagement
-@EnableJpaRepositories(
-        entityManagerFactoryRef = "neonEntityManagerFactory",
-        transactionManagerRef = "neonTransactionManager",
-
-        basePackages = { "com.leitor_textos_api.pessoal.repository" },
-        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
-                type = org.springframework.context.annotation.FilterType.REGEX,
-                pattern = "com\\.leitor_textos_api\\.pessoal\\.repository\\.local\\..*"
-        )
-)
+//@Profile("!local")
+//@Configuration
+//@EnableTransactionManagement
+//@EnableJpaRepositories(
+//        entityManagerFactoryRef = "neonEntityManagerFactory",
+//        transactionManagerRef = "neonTransactionManager",
+//
+//        basePackages = { "com.leitor_textos_api.pessoal.repository" },
+//        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+//                type = org.springframework.context.annotation.FilterType.REGEX,
+//                pattern = "com\\.leitor_textos_api\\.pessoal\\.repository\\.local\\..*"
+//        )
+//)
 public class NeonDbConfig {
 
     @Primary
