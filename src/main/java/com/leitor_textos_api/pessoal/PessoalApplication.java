@@ -15,7 +15,6 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
@@ -36,23 +35,25 @@ public class PessoalApplication {
 	CommandLineRunner init(LivroRepository livroRepository, UsuarioRepository usuarioRepository) {
 		return args -> {
 
-			// 1. Criacao do Usuario Admin Fixo protegida contra erros
+			// 1. Criação ou Atualização do Usuário Admin Fixo
 			try {
 				String emailAdmin = "wilson@admin.com";
-				if (usuarioRepository.findByEmail(emailAdmin).isEmpty()) {
-					Usuario admin = new Usuario();
-					admin.setNome("Administrador");
-					admin.setEmail(emailAdmin);
 
-					BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-					admin.setSenha(encoder.encode("admin123"));
-					admin.setRole(Role.ROLE_ADMIN);
+				// Busca o usuário existente ou instancia um novo objeto
+				Usuario admin = usuarioRepository.findByEmail(emailAdmin).orElse(new Usuario());
 
-					usuarioRepository.save(admin);
-					System.out.println("✅ ADMIN CRIADO COM SUCESSO!");
-				}
+				admin.setNome("Administrador");
+				admin.setEmail(emailAdmin);
+
+				BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+				admin.setSenha(encoder.encode("admin123"));
+				admin.setRole(Role.ROLE_ADMIN);
+
+				// save() insere se for novo ou atualiza se já existir no banco
+				usuarioRepository.save(admin);
+				System.out.println("✅ ADMIN REGISTRADO OU ATUALIZADO COM SUCESSO!");
 			} catch (Exception e) {
-				System.err.println("⚠️ Erro ao criar usuário admin (ignorando para subir o servidor): " + e.getMessage());
+				System.err.println("⚠️ Erro ao registrar usuário admin: " + e.getMessage());
 			}
 
 			// 2. Carga Inicial de Textos protegida contra erros de constraint/FK
@@ -107,7 +108,7 @@ public class PessoalApplication {
 					System.out.println("✅ TODOS OS TEXTOS E CAPÍTULOS FORAM CARREGADOS!");
 				}
 			} catch (Exception e) {
-				System.err.println("⚠️ Erro ao carregar livros iniciais (ignorando para subir o servidor): " + e.getMessage());
+				System.err.println("⚠️ Erro ao carregar livros iniciais: " + e.getMessage());
 			}
 		};
 	}
