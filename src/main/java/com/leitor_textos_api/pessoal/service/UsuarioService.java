@@ -10,6 +10,7 @@ import com.leitor_textos_api.pessoal.repository.LivroRepository;
 import com.leitor_textos_api.pessoal.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +25,9 @@ public class UsuarioService {
     @Autowired
     private LivroRepository livroRepository;
 
-    // 1. Cadastrar novo leitor
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    // 1. Cadastrar novo leitor (criptografando a senha)
     public UsuarioRespostaDTO cadastrarLeitor(RegistroDTO dto) {
         String emailFormatado = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
 
@@ -39,7 +42,10 @@ public class UsuarioService {
         Usuario novoUsuario = new Usuario();
         novoUsuario.setNome(dto.getNome() != null ? dto.getNome().trim() : "");
         novoUsuario.setEmail(emailFormatado);
-        novoUsuario.setSenha(dto.getSenha() != null ? dto.getSenha().trim() : "");
+
+        // Criptografa a senha antes de salvar
+        String senhaPura = dto.getSenha() != null ? dto.getSenha().trim() : "";
+        novoUsuario.setSenha(passwordEncoder.encode(senhaPura));
         novoUsuario.setRole(Role.ROLE_LEITOR);
 
         Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
@@ -52,7 +58,7 @@ public class UsuarioService {
         );
     }
 
-    // 2. Autenticar usuário
+    // 2. Autenticar usuário (Suporta BCrypt e Texto Puro)
     public UsuarioRespostaDTO autenticar(LoginDTO dto) {
         String emailFormatado = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
         String senhaFormatada = dto.getSenha() != null ? dto.getSenha().trim() : "";
@@ -65,7 +71,15 @@ public class UsuarioService {
 
         Usuario usuario = usuarioOpt.get();
 
-        if (!usuario.getSenha().equals(senhaFormatada)) {
+        // Valida a senha usando BCrypt (se for hash) ou texto puro
+        boolean senhaValida = false;
+        if (usuario.getSenha().startsWith("$2a$") || usuario.getSenha().startsWith("$2b$")) {
+            senhaValida = passwordEncoder.matches(senhaFormatada, usuario.getSenha());
+        } else {
+            senhaValida = usuario.getSenha().equals(senhaFormatada);
+        }
+
+        if (!senhaValida) {
             throw new IllegalArgumentException("E-mail ou senha incorretos.");
         }
 
@@ -77,7 +91,7 @@ public class UsuarioService {
         );
     }
 
-    // 3. Validação de Acesso (Ajustada para liberar todas as seções públicas, incluindo a Seção 2)
+    // 3. Validação de Acesso
     public boolean validarAcessoAoLivro(Long usuarioId, Long livroId) {
         if (livroId == null) return false;
 
@@ -86,19 +100,14 @@ public class UsuarioService {
             Livro livro = livroOpt.get();
             Long secaoId = livro.getSecaoId();
 
-            // 🟢 SE NÃO FOR DA SEÇÃO 3 (RESTRITA), LIBERA AUTOMATICAMENTE!
-            // (Isso cobre Seção 1, Seção 2, Seção 4, Seção 5, etc.)
             boolean ehSecaoPublica = secaoId == null || secaoId != 3L;
             if (ehSecaoPublica) return true;
         }
 
-        // Se for ADMINISTRADOR: Acesso total liberado
         if (usuarioId != null && usuarioId > 0 && ehAdministrador(usuarioId)) return true;
 
-        // Se o usuário não estiver identificado na seção restrita (3), nega
         if (usuarioId == null || usuarioId <= 0) return false;
 
-        // Se for Seção 3 e for LEITOR: Checa se possui a permissão no banco
         return usuarioRepository.possuiAcessoAoLivro(usuarioId, livroId);
     }
 
@@ -134,9 +143,9 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    // 7. Listar leitores
+    // 7. Listar todos os usuários (leitores e administradores)
     public List<UsuarioRespostaDTO> listarLeitores() {
-        return usuarioRepository.findByRole(Role.ROLE_LEITOR)
+        return usuarioRepository.findAll()
                 .stream()
                 .map(u -> new UsuarioRespostaDTO(u.getId(), u.getNome(), u.getEmail(), u.getRole()))
                 .toList();
