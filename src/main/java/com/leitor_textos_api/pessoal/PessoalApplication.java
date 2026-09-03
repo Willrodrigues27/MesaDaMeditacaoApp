@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
 
@@ -32,9 +32,7 @@ public class PessoalApplication {
 	}
 
 	@Bean
-	CommandLineRunner init(LivroRepository livroRepository,
-						   UsuarioRepository usuarioRepository,
-						   PasswordEncoder encoder) {
+	CommandLineRunner init(LivroRepository livroRepository, UsuarioRepository usuarioRepository) {
 		return args -> {
 
 			// 1. Criacao do Usuario Admin Fixo (se nao existir)
@@ -43,8 +41,11 @@ public class PessoalApplication {
 				Usuario admin = new Usuario();
 				admin.setNome("Administrador");
 				admin.setEmail(emailAdmin);
-				// Codifica a senha em BCrypt para permitir login com o Spring Security
+
+				// 🟢 Instância direta do BCrypt sem injetar o Bean nos parâmetros do método
+				BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 				admin.setSenha(encoder.encode("admin123"));
+
 				admin.setRole(Role.ROLE_ADMIN);
 				usuarioRepository.save(admin);
 				System.out.println("✅ ADMIN CRIADO COM SUCESSO!");
