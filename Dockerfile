@@ -11,6 +11,12 @@ RUN mvn clean package -DskipTests
 # Estágio 2: Execução da aplicação
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+
+# Copia o artefato gerado no estágio de build
 COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Declara a porta padrão
+EXPOSE 8080
+
+# Executa o JAR injetando a porta dinâmica do Render ($PORT) e escutando em 0.0.0.0
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -jar app.jar"]
