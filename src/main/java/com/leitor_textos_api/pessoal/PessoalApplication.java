@@ -15,6 +15,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
@@ -35,74 +36,78 @@ public class PessoalApplication {
 	CommandLineRunner init(LivroRepository livroRepository, UsuarioRepository usuarioRepository) {
 		return args -> {
 
-			// 1. Criacao do Usuario Admin Fixo (se nao existir)
-			String emailAdmin = "wilson@admin.com";
-			if (usuarioRepository.findByEmail(emailAdmin).isEmpty()) {
-				Usuario admin = new Usuario();
-				admin.setNome("Administrador");
-				admin.setEmail(emailAdmin);
+			// 1. Criacao do Usuario Admin Fixo protegida contra erros
+			try {
+				String emailAdmin = "wilson@admin.com";
+				if (usuarioRepository.findByEmail(emailAdmin).isEmpty()) {
+					Usuario admin = new Usuario();
+					admin.setNome("Administrador");
+					admin.setEmail(emailAdmin);
 
-				// 🟢 Instância direta do BCrypt sem injetar o Bean nos parâmetros do método
-				BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-				admin.setSenha(encoder.encode("admin123"));
+					BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+					admin.setSenha(encoder.encode("admin123"));
+					admin.setRole(Role.ROLE_ADMIN);
 
-				admin.setRole(Role.ROLE_ADMIN);
-				usuarioRepository.save(admin);
-				System.out.println("✅ ADMIN CRIADO COM SUCESSO!");
+					usuarioRepository.save(admin);
+					System.out.println("✅ ADMIN CRIADO COM SUCESSO!");
+				}
+			} catch (Exception e) {
+				System.err.println("⚠️ Erro ao criar usuário admin (ignorando para subir o servidor): " + e.getMessage());
 			}
 
-			// 2. Carga Inicial de Textos (Executa apenas se o banco de livros estiver vazio)
-			if (livroRepository.count() == 0) {
+			// 2. Carga Inicial de Textos protegida contra erros de constraint/FK
+			try {
+				if (livroRepository.count() == 0) {
 
-				// --- TEXTO / LIVRO 1 (Seção 1 - Ensinos Bíblicos) ---
-				Livro livro1 = new Livro();
-				livro1.setTitulo("A Importância da Oração");
-				livro1.setDescricao("Reflexões diárias sobre a vida de oração.");
-				livro1.setSecaoId(1L);
+					// --- TEXTO / LIVRO 1 ---
+					Livro livro1 = new Livro();
+					livro1.setTitulo("A Importância da Oração");
+					livro1.setDescricao("Reflexões diárias sobre a vida de oração.");
+					livro1.setSecaoId(1L);
 
-				Capitulo cap1 = new Capitulo();
-				cap1.setNumeroCapitulo(1);
-				cap1.setTituloCapitulo("Capítulo 1 - O Poder da Constância");
-				cap1.setConteudo("A oração constante fortalece o espírito e traz paz ao coração em momentos de atribulação...");
-				cap1.setLivro(livro1);
+					Capitulo cap1 = new Capitulo();
+					cap1.setNumeroCapitulo(1);
+					cap1.setTituloCapitulo("Capítulo 1 - O Poder da Constância");
+					cap1.setConteudo("A oração constante fortalece o espírito e traz paz ao coração em momentos de atribulação...");
+					cap1.setLivro(livro1);
 
-				livro1.setCapitulos(List.of(cap1));
+					livro1.setCapitulos(List.of(cap1));
 
+					// --- TEXTO / LIVRO 2 ---
+					Livro livro2 = new Livro();
+					livro2.setTitulo("O Amortecimento das Arestas no Casamento");
+					livro2.setDescricao("Orientações para o diálogo e convivência a dois.");
+					livro2.setSecaoId(3L);
 
-				// --- TEXTO / LIVRO 2 (Seção 3 - Ensino Casais) ---
-				Livro livro2 = new Livro();
-				livro2.setTitulo("O Amortecimento das Arestas no Casamento");
-				livro2.setDescricao("Orientações para o diálogo e convivência a dois.");
-				livro2.setSecaoId(3L);
+					Capitulo cap2 = new Capitulo();
+					cap2.setNumeroCapitulo(1);
+					cap2.setTituloCapitulo("Capítulo 1 - A Arte da Escuta");
+					cap2.setConteudo("Ouvir com atenção é o primeiro passo para compreender as necessidades do parceiro sem julgamentos prévios...");
+					cap2.setLivro(livro2);
 
-				Capitulo cap2 = new Capitulo();
-				cap2.setNumeroCapitulo(1);
-				cap2.setTituloCapitulo("Capítulo 1 - A Arte da Escuta");
-				cap2.setConteudo("Ouvir com atenção é o primeiro passo para compreender as necessidades do parceiro sem julgamentos prévios...");
-				cap2.setLivro(livro2);
+					livro2.setCapitulos(List.of(cap2));
 
-				livro2.setCapitulos(List.of(cap2));
+					// --- TEXTO / LIVRO 3 ---
+					Livro livro3 = new Livro();
+					livro3.setTitulo("Educação e Valores na Família");
+					livro3.setDescricao("Princípios essenciais para a estrutura familiar.");
+					livro3.setSecaoId(2L);
 
+					Capitulo cap3 = new Capitulo();
+					cap3.setNumeroCapitulo(1);
+					cap3.setTituloCapitulo("Capítulo 1 - O Exemplo Prático");
+					cap3.setConteudo("Os ensinamentos mais profundos transmitidos na família são aqueles demonstrados pelas atitudes diárias...");
+					cap3.setLivro(livro3);
 
-				// --- TEXTO / LIVRO 3 (Seção 2 - Ensino Família - Restrita) ---
-				Livro livro3 = new Livro();
-				livro3.setTitulo("Educação e Valores na Família");
-				livro3.setDescricao("Princípios essenciais para a estrutura familiar.");
-				livro3.setSecaoId(2L);
+					livro3.setCapitulos(List.of(cap3));
 
-				Capitulo cap3 = new Capitulo();
-				cap3.setNumeroCapitulo(1);
-				cap3.setTituloCapitulo("Capítulo 1 - O Exemplo Prático");
-				cap3.setConteudo("Os ensinamentos mais profundos transmitidos na família são aqueles demonstrados pelas atitudes diárias...");
-				cap3.setLivro(livro3);
+					// Salva todos os livros no PostgreSQL
+					livroRepository.saveAll(List.of(livro1, livro2, livro3));
 
-				livro3.setCapitulos(List.of(cap3));
-
-
-				// Salva todos os livros no PostgreSQL
-				livroRepository.saveAll(List.of(livro1, livro2, livro3));
-
-				System.out.println("✅ TODOS OS TEXTOS E CAPÍTULOS FORAM CARREGADOS!");
+					System.out.println("✅ TODOS OS TEXTOS E CAPÍTULOS FORAM CARREGADOS!");
+				}
+			} catch (Exception e) {
+				System.err.println("⚠️ Erro ao carregar livros iniciais (ignorando para subir o servidor): " + e.getMessage());
 			}
 		};
 	}
