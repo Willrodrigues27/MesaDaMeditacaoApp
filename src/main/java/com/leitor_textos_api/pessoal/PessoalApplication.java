@@ -10,10 +10,21 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
 @SpringBootApplication
+@EnableJpaRepositories(
+		basePackages = "com.leitor_textos_api.pessoal.repository",
+		excludeFilters = @ComponentScan.Filter(
+				type = FilterType.REGEX,
+				pattern = "com\\.leitor_textos_api\\.pessoal\\.repository\\.local\\..*"
+		)
+)
 public class PessoalApplication {
 
 	public static void main(String[] args) {
@@ -21,7 +32,9 @@ public class PessoalApplication {
 	}
 
 	@Bean
-	CommandLineRunner init(LivroRepository livroRepository, UsuarioRepository usuarioRepository) {
+	CommandLineRunner init(LivroRepository livroRepository,
+						   UsuarioRepository usuarioRepository,
+						   PasswordEncoder encoder) {
 		return args -> {
 
 			// 1. Criacao do Usuario Admin Fixo (se nao existir)
@@ -30,10 +43,11 @@ public class PessoalApplication {
 				Usuario admin = new Usuario();
 				admin.setNome("Administrador");
 				admin.setEmail(emailAdmin);
-				admin.setSenha("admin123");
+				// Codifica a senha em BCrypt para permitir login com o Spring Security
+				admin.setSenha(encoder.encode("admin123"));
 				admin.setRole(Role.ROLE_ADMIN);
 				usuarioRepository.save(admin);
-				System.out.println("✅ ADMIN CRIADO!");
+				System.out.println("✅ ADMIN CRIADO COM SUCESSO!");
 			}
 
 			// 2. Carga Inicial de Textos (Executa apenas se o banco de livros estiver vazio)
