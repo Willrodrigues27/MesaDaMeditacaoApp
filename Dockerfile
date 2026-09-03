@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Informa ao Docker que a porta pode variar
-EXPOSE 8080
+EXPOSE 8081
 
 # Executa o JAR forçando o Spring a pegar a variável PORT e aceitar conexões externas
 ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -jar app.jar"]
