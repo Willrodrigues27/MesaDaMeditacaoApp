@@ -25,11 +25,40 @@ public class CapituloController {
     @Autowired
     private UsuarioService usuarioService;
 
+    // COLAR ESTE NOVO BLOCO NO LUGAR DO ANTIGO:
     @GetMapping("/pesquisa")
-    public ResponseEntity<List<Capitulo>> pesquisarConteudo(@RequestParam("termo") String termo) {
-        List<Capitulo> paginasEncontradas = capituloRepository
-                .findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCaseOrderByNumeroCapituloAsc(termo, termo);
-        return ResponseEntity.ok(paginasEncontradas);
+    public ResponseEntity<List<Capitulo>> pesquisarConteudo(
+            @RequestParam("termo") String termo,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+        String termoLimpo = termo != null ? termo.trim() : "";
+
+        // Se a pesquisa estiver vazia ou não vier ID de usuário, bloqueia e retorna vazio
+        if (termoLimpo.isEmpty() || idFinal == null) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        // 1. Fluxo para Administradores: Pode ver resultados de todos os livros
+        if (usuarioService.ehAdministrador(idFinal)) {
+            List<Capitulo> todosOsCapitulosEncontrados = capituloRepository
+                    .findByConteudoContainingIgnoreCaseOrTituloCapituloContainingIgnoreCaseOrderByNumeroCapituloAscIdAsc(termoLimpo, termoLimpo);
+            return ResponseEntity.ok(todosOsCapitulosEncontrados);
+        }
+
+        // 2. Fluxo para Usuários Comuns: Obtém primeiro a lista de livros que eles podem ver
+        List<Long> livrosPermitidos = usuarioService.obterIdsLivrosPermitidos(idFinal);
+
+        // Se o usuário não tiver permissão para nenhum livro, encerra a busca imediatamente
+        if (livrosPermitidos == null || livrosPermitidos.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        // 3. Executa a pesquisa de texto APENAS dentro dos livros da lista de permissões
+        List<Capitulo> paginasPermitidas = capituloRepository.pesquisarNosLivrosPermitidos(termoLimpo, livrosPermitidos);
+
+        return ResponseEntity.ok(paginasPermitidas);
     }
 
     @PostMapping("/livro/{livroId}")
@@ -68,7 +97,7 @@ public class CapituloController {
                     .body("Acesso Negado: Você não possui permissão para ler os capítulos deste livro.");
         }
 
-        List<Capitulo> capitulos = capituloRepository.findByLivroIdOrderByNumeroCapituloAsc(livroId);
+        List<Capitulo> capitulos = capituloRepository.findByLivroIdOrderByNumeroCapituloAscIdAsc(livroId);
         return ResponseEntity.ok(capitulos);
     }
 

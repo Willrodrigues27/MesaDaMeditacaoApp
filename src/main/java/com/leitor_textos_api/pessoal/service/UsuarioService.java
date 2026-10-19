@@ -118,6 +118,12 @@ public class UsuarioService {
                 .map(u -> u.getRole() == Role.ROLE_ADMIN)
                 .orElse(false);
     }
+    public List<Long> obterIdsLivrosPermitidos(Long usuarioId) {
+        if (usuarioId == null || usuarioId <= 0) {
+            return List.of();
+        }
+        return usuarioRepository.findLivrosPermitidosIdsByUsuarioId(usuarioId);
+    }
 
     // 5. Conceder permissão
     @Transactional

@@ -64,7 +64,7 @@ public class LivroController {
                     .body("Acesso negado a este conteúdo.");
         }
 
-        List<Capitulo> capitulos = capituloRepository.findByLivroIdOrderByNumeroCapituloAsc(id);
+        List<Capitulo> capitulos = capituloRepository.findByLivroIdOrderByNumeroCapituloAscIdAsc(id);
         return ResponseEntity.ok(capitulos);
     }
 

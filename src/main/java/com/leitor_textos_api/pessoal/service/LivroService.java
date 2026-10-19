@@ -82,7 +82,7 @@ public class LivroService {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Livro não encontrado com o ID: " + id);
         }
-        return capituloRepository.findByLivroIdOrderByNumeroCapituloAsc(id);
+        return capituloRepository.findByLivroIdOrderByNumeroCapituloAscIdAsc(id);
     }
 
     public List<Livro> listarPorSecao(Long secaoId) {
