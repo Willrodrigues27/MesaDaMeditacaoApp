@@ -25,7 +25,6 @@ public class CapituloController {
     @Autowired
     private UsuarioService usuarioService;
 
-    // COLAR ESTE NOVO BLOCO NO LUGAR DO ANTIGO:
     @GetMapping("/pesquisa")
     public ResponseEntity<List<Capitulo>> pesquisarConteudo(
             @RequestParam("termo") String termo,
