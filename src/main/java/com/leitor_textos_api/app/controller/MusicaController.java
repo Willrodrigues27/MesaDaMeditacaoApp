@@ -1,0 +1,96 @@
+package com.leitor_textos_api.app.controller;
+
+import com.leitor_textos_api.app.dto.MusicaDTO;
+import com.leitor_textos_api.app.modelo.Musica;
+import com.leitor_textos_api.app.service.MusicaService;
+import com.leitor_textos_api.app.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/musicas")
+@CrossOrigin(origins = "*")
+public class MusicaController {
+
+    @Autowired
+    private MusicaService musicaService;
+
+    @Autowired
+    private UsuarioService usuarioService;
+
+    @GetMapping
+    public ResponseEntity<List<Musica>> listarTodas() {
+        return ResponseEntity.ok(musicaService.listarTodas());
+    }
+
+    @GetMapping("/secao/{id}")
+    public ResponseEntity<List<Musica>> listarPorSecao(@PathVariable Long id) {
+        return ResponseEntity.ok(musicaService.listarPorSecao(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> salvar(
+            @RequestBody MusicaDTO dto,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem cadastrar músicas.");
+        }
+
+        Musica salva = musicaService.salvarMusica(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(salva);
+    }
+
+    // 🟢 EDITAR MÚSICA (Restrito a ADMIN via Header)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizar(
+            @PathVariable Long id,
+            @RequestBody MusicaDTO dto,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem editar músicas.");
+        }
+
+        try {
+            Musica atualizada = musicaService.atualizarMusica(id, dto);
+            return ResponseEntity.ok(atualizada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Música não encontrada.");
+        }
+    }
+
+    // 🟢 DELETAR MÚSICA (Restrito a ADMIN via Header)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletar(
+            @PathVariable Long id,
+            @RequestHeader(value = "Usuario-Id", required = false) Long usuarioId,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long xUsuarioId) {
+
+        Long idFinal = usuarioId != null ? usuarioId : xUsuarioId;
+
+        if (idFinal == null || !usuarioService.ehAdministrador(idFinal)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: Apenas administradores podem excluir músicas.");
+        }
+
+        try {
+            musicaService.deletarMusica(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Música não encontrada.");
+        }
+    }
+}

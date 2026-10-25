@@ -11,7 +11,7 @@
 	</parent>
 
 	<groupId>com.leitor-textos-api</groupId>
-	<artifactId>pessoal</artifactId>
+	<artifactId>mesadameditacaoapp</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>pessoal</name>
 	<description>API de Leitura de Textos</description>
