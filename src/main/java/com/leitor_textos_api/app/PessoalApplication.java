@@ -19,10 +19,10 @@ import java.util.List;
 
 @SpringBootApplication
 @EnableJpaRepositories(
-		basePackages = "com.leitor_textos_api.pessoal.repository",
+		basePackages = "com.leitor_textos_api.app.repository",
 		excludeFilters = @ComponentScan.Filter(
 				type = FilterType.REGEX,
-				pattern = "com\\.leitor_textos_api\\.pessoal\\.repository\\.local\\..*"
+				pattern = "com\\.leitor_textos_api\\.app\\.repository\\.local\\..*"
 		)
 )
 public class PessoalApplication {
