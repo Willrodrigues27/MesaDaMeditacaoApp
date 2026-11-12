@@ -16,8 +16,8 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Define explicitamente a origem permitida (sem usar "*")
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        // Utiliza allowedOriginPatterns para aceitar qualquer porta do localhost dinamicamente
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

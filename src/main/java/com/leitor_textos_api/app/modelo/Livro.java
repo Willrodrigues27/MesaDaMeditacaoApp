@@ -97,6 +97,11 @@ public class Livro {
 
     public void setCapitulos(List<Capitulo> capitulos) {
         this.capitulos = capitulos;
+        if (this.capitulos != null) {
+            for (Capitulo capitulo : this.capitulos) {
+                capitulo.setLivro(this);
+            }
+        }
     }
 
     public void adionarCapitulo(Capitulo capitulo) {
@@ -104,7 +109,7 @@ public class Livro {
         capitulo.setLivro(this);
     }
 
-    // ESSENCIAL para o funcionamento do HashSet no relacionamento @ManyToMany
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
