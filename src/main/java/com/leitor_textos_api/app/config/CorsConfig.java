@@ -16,8 +16,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Utiliza allowedOriginPatterns para aceitar qualquer porta do localhost dinamicamente
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
+        // 🛡️ LISTA VIP: Permite o localhost e o seu domínio oficial da Vercel
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://leitor-web-mesadameditacao-gamma.vercel.app"
+        ));
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
